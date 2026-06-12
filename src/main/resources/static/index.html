@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sur Salud - Gestión de Citas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --azul-oscuro: #003087;
+            --azul-medio: #0057A8;
+            --azul-claro: #E8F0FB;
+            --azul-hover: #004bb5;
+            --blanco: #ffffff;
+            --gris-fondo: #f4f6fa;
+            --gris-borde: #dde3ed;
+            --gris-texto: #6b7280;
+            --gris-oscuro: #374151;
+            --rojo: #c0392b;
+            --verde: #1a7d4b;
+            --amarillo-bg: #fffbea;
+            --amarillo-borde: #f5c518;
+            --sidebar-ancho: 240px;
+            --font: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--gris-fondo);
+            color: var(--gris-oscuro);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-ancho);
+            background: var(--azul-oscuro);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo h1 {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-logo span {
+            color: rgba(255,255,255,0.55);
+            font-size: 12px;
+            display: block;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
+        .sidebar-nav {
+            padding: 16px 0;
+            flex: 1;
+        }
+
+        .nav-section-label {
+            color: rgba(255,255,255,0.4);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 12px 24px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            color: rgba(255,255,255,0.75);
+            font-size: 14px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-left-color: #5ba4f5;
+            font-weight: 500;
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            opacity: 0.85;
+        }
+
+        .nav-item.active svg { opacity: 1; }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-ancho);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--blanco);
+            border-bottom: 1px solid var(--gris-borde);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azul-oscuro);
+        }
+
+        .topbar-badge {
+            background: var(--azul-claro);
+            color: var(--azul-medio);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .content {
+            padding: 28px 32px;
+            flex: 1;
+        }
+
+        /* SECCIONES */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* CARDS RESUMEN */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--blanco);
+            border: 1px solid var(--gris-borde);
+            border-radius: 10px;
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon svg { width: 22px; height: 22px; }
+
+        .stat-icon.azul { background: var(--azul-claro); color: var(--azul-medio); }
+        .stat-icon.verde { background: #e6f4ee; color: var(--verde); }
+        .stat-icon.naranja { background: #fff0e6; color: #c05700; }
+
+        .stat-info p { font-size: 13px; color: var(--gris-texto); margin-bottom: 2px; }
+        .stat-info h2 { font-size: 26px; font-weight: 700; color: var(--azul-oscuro); line-height: 1; }
+
+        /* TABLA */
+        .tabla-card {
+            background: var(--blanco);
+            border: 1px solid var(--gris-borde);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .tabla-header {
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--gris-borde);
+        }
+
+        .tabla-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--azul-oscuro);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, transform 0.1s;
+            font-family: var(--font);
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--azul-medio);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: var(--azul-hover); }
+
+        .btn-danger {
+            background: #fdecea;
+            color: var(--rojo);
+            border: 1px solid #f5c0bb;
+        }
+
+        .btn-danger:hover { background: #fbd7d4; }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--azul-medio);
+            border: 1px solid var(--gris-borde);
+        }
+
+        .btn-outline:hover { background: var(--azul-claro); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+            padding: 11px 22px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gris-texto);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #f9fafb;
+            border-bottom: 1px solid var(--gris-borde);
+        }
+
+        td {
+            padding: 13px 22px;
+            border-bottom: 1px solid #f3f4f6;
+            color: var(--gris-oscuro);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafbfc; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-pendiente { background: #fff8e1; color: #9a6700; }
+        .badge-confirmada { background: #e6f4ee; color: #1a7d4b; }
+        .badge-cancelada { background: #fdecea; color: #c0392b; }
+
+        .tabla-vacia {
+            padding: 40px 22px;
+            text-align: center;
+            color: var(--gris-texto);
+            font-size: 14px;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--blanco);
+            border-radius: 12px;
+            width: 460px;
+            max-width: 95vw;
+            padding: 28px;
+            box-shadow: 0 8px 32px rgba(0,0,51,0.15);
+        }
+
+        .modal h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--azul-oscuro);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gris-oscuro);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--gris-borde);
+            border-radius: 7px;
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--gris-oscuro);
+            background: var(--blanco);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--azul-medio);
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        /* MENSAJE */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--azul-oscuro);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show { opacity: 1; }
+        .toast.error { background: var(--rojo); }
+
+        /* DASHBOARD BIENVENIDA */
+        .bienvenida {
+            background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul-medio) 100%);
+            border-radius: 12px;
+            padding: 28px 32px;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+        .bienvenida h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .bienvenida p {
+            font-size: 14px;
+            opacity: 0.75;
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <h1>Sur Salud</h1>
+        <span>Sistema de citas médicas</span>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" onclick="mostrarSeccion('dashboard', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Inicio
+        </div>
+        <div class="nav-section-label">Gestión</div>
+        <div class="nav-item" onclick="mostrarSeccion('pacientes', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Pacientes
+        </div>
+        <div class="nav-item" onclick="mostrarSeccion('medicos', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Médicos
+        </div>
+        <div class="nav-item" onclick="mostrarSeccion('citas', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Citas
+        </div>
+    </nav>
+    <div class="sidebar-footer">Cesar Martinez - Politécnico Internacional &mdash; 2026</div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <span class="topbar-title" id="topbar-title">Inicio</span>
+        <span class="topbar-badge">Clínica Sur Salud &mdash; Yumbo</span>
+    </div>
+
+    <div class="content">
+
+        <!-- DASHBOARD -->
+        <div id="section-dashboard" class="section active">
+            <div class="bienvenida">
+                <h2>Bienvenido al sistema de gestión</h2>
+                <p>Administra pacientes, médicos y citas desde un solo lugar.</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon azul">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Pacientes registrados</p>
+                        <h2 id="count-pacientes">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon verde">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Médicos activos</p>
+                        <h2 id="count-medicos">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon naranja">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Citas registradas</p>
+                        <h2 id="count-citas">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PACIENTES -->
+        <div id="section-pacientes" class="section">
+            <div class="tabla-card">
+                <div class="tabla-header">
+                    <h3>Pacientes</h3>
+                    <button class="btn btn-primary" onclick="abrirModal('modal-paciente')">Nuevo paciente</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Documento</th>
+                        <th>Teléfono</th>
+                        <th>Correo</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="tabla-pacientes">
+                    <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MEDICOS -->
+        <div id="section-medicos" class="section">
+            <div class="tabla-card">
+                <div class="tabla-header">
+                    <h3>Médicos</h3>
+                    <button class="btn btn-primary" onclick="abrirModal('modal-medico')">Nuevo médico</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Especialidad</th>
+                        <th>Consultorio</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="tabla-medicos">
+                    <tr><td colspan="4" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CITAS -->
+        <div id="section-citas" class="section">
+            <div class="tabla-card">
+                <div class="tabla-header">
+                    <h3>Citas médicas</h3>
+                    <button class="btn btn-primary" onclick="abrirModal('modal-cita')">Nueva cita</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Paciente</th>
+                        <th>Médico</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="tabla-citas">
+                    <tr><td colspan="6" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- MODAL PACIENTE -->
+<div class="modal-overlay" id="modal-paciente">
+    <div class="modal">
+        <h3>Registrar paciente</h3>
+        <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="p-nombre" placeholder="Ej: María Torres">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Documento</label>
+                <input type="text" id="p-documento" placeholder="Número de cédula">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="p-telefono" placeholder="3001234567">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="p-correo" placeholder="correo@ejemplo.com">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="cerrarModal('modal-paciente')">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarPaciente()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL MEDICO -->
+<div class="modal-overlay" id="modal-medico">
+    <div class="modal">
+        <h3>Registrar médico</h3>
+        <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="m-nombre" placeholder="Ej: Dr. Carlos Ruiz">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Especialidad</label>
+                <input type="text" id="m-especialidad" placeholder="Ej: Pediatría">
+            </div>
+            <div class="form-group">
+                <label>Consultorio</label>
+                <input type="text" id="m-consultorio" placeholder="Ej: 101">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="cerrarModal('modal-medico')">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarMedico()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CITA -->
+<div class="modal-overlay" id="modal-cita">
+    <div class="modal">
+        <h3>Agendar cita</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="c-fecha">
+            </div>
+            <div class="form-group">
+                <label>Hora</label>
+                <input type="time" id="c-hora">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Paciente</label>
+            <select id="c-paciente"></select>
+        </div>
+        <div class="form-group">
+            <label>Médico</label>
+            <select id="c-medico"></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="cerrarModal('modal-cita')">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarCita()">Agendar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = 'http://localhost:8080';
+
+    function mostrarSeccion(id, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('section-' + id).classList.add('active');
+        el.classList.add('active');
+        const titulos = { dashboard: 'Inicio', pacientes: 'Pacientes', medicos: 'Médicos', citas: 'Citas médicas' };
+        document.getElementById('topbar-title').textContent = titulos[id];
+        if (id === 'pacientes') cargarPacientes();
+        if (id === 'medicos') cargarMedicos();
+        if (id === 'citas') cargarCitas();
+        if (id === 'dashboard') cargarContadores();
+    }
+
+    function toast(msg, tipo) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show' + (tipo === 'error' ? ' error' : '');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function abrirModal(id) {
+        document.getElementById(id).classList.add('open');
+        if (id === 'modal-cita') poblarSelectsCita();
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    async function cargarPacientes() {
+        const res = await fetch(API + '/pacientes').catch(() => null);
+        if (!res) { document.getElementById('tabla-pacientes').innerHTML = '<tr><td colspan="5" class="tabla-vacia">No se pudo conectar con el servidor.</td></tr>'; return; }
+        const datos = await res.json();
+        const tbody = document.getElementById('tabla-pacientes');
+        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="5" class="tabla-vacia">No hay pacientes registrados.</td></tr>'; return; }
+        tbody.innerHTML = datos.map(p => `
+    <tr>
+      <td>${p.nombre}</td>
+      <td>${p.documento}</td>
+      <td>${p.telefono}</td>
+      <td>${p.correo}</td>
+      <td><button class="btn btn-danger" onclick="eliminarPaciente(${p.id})">Eliminar</button></td>
+    </tr>`).join('');
+    }
+
+    async function cargarMedicos() {
+        const res = await fetch(API + '/medicos').catch(() => null);
+        if (!res) { document.getElementById('tabla-medicos').innerHTML = '<tr><td colspan="4" class="tabla-vacia">No se pudo conectar con el servidor.</td></tr>'; return; }
+        const datos = await res.json();
+        const tbody = document.getElementById('tabla-medicos');
+        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="4" class="tabla-vacia">No hay médicos registrados.</td></tr>'; return; }
+        tbody.innerHTML = datos.map(m => `
+    <tr>
+      <td>${m.nombre}</td>
+      <td>${m.especialidad}</td>
+      <td>${m.consultorio}</td>
+      <td><button class="btn btn-danger" onclick="eliminarMedico(${m.id})">Eliminar</button></td>
+    </tr>`).join('');
+    }
+
+    async function cargarCitas() {
+        const res = await fetch(API + '/citas').catch(() => null);
+        if (!res) { document.getElementById('tabla-citas').innerHTML = '<tr><td colspan="6" class="tabla-vacia">No se pudo conectar con el servidor.</td></tr>'; return; }
+        const datos = await res.json();
+        const tbody = document.getElementById('tabla-citas');
+        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="6" class="tabla-vacia">No hay citas registradas.</td></tr>'; return; }
+        tbody.innerHTML = datos.map(c => `
+    <tr>
+      <td>${c.fecha}</td>
+      <td>${c.hora}</td>
+      <td>${c.paciente ? c.paciente.nombre : '-'}</td>
+      <td>${c.medico ? c.medico.nombre : '-'}</td>
+      <td><span class="badge badge-${c.estado.toLowerCase()}">${c.estado}</span></td>
+      <td>
+        <button class="btn btn-outline" style="margin-right:6px" onclick="cancelarCita(${c.id})">Cancelar</button>
+        <button class="btn btn-danger" onclick="eliminarCita(${c.id})">Eliminar</button>
+      </td>
+    </tr>`).join('');
+    }
+
+    async function cargarContadores() {
+        const [rp, rm, rc] = await Promise.all([
+            fetch(API + '/pacientes').catch(() => null),
+            fetch(API + '/medicos').catch(() => null),
+            fetch(API + '/citas').catch(() => null)
+        ]);
+        if (rp) document.getElementById('count-pacientes').textContent = (await rp.json()).length;
+        if (rm) document.getElementById('count-medicos').textContent = (await rm.json()).length;
+        if (rc) document.getElementById('count-citas').textContent = (await rc.json()).length;
+    }
+
+    async function poblarSelectsCita() {
+        const [rp, rm] = await Promise.all([fetch(API + '/pacientes'), fetch(API + '/medicos')]);
+        const pacientes = await rp.json();
+        const medicos = await rm.json();
+        document.getElementById('c-paciente').innerHTML = pacientes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        document.getElementById('c-medico').innerHTML = medicos.map(m => `<option value="${m.id}">${m.nombre} - ${m.especialidad}</option>`).join('');
+    }
+
+    async function guardarPaciente() {
+        const body = {
+            nombre: document.getElementById('p-nombre').value,
+            documento: document.getElementById('p-documento').value,
+            telefono: document.getElementById('p-telefono').value,
+            correo: document.getElementById('p-correo').value
+        };
+        if (!body.nombre || !body.documento) { toast('Nombre y documento son obligatorios.', 'error'); return; }
+        const res = await fetch(API + '/pacientes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) { cerrarModal('modal-paciente'); cargarPacientes(); cargarContadores(); toast('Paciente registrado.'); }
+        else toast('Error al guardar el paciente.', 'error');
+    }
+
+    async function guardarMedico() {
+        const body = {
+            nombre: document.getElementById('m-nombre').value,
+            especialidad: document.getElementById('m-especialidad').value,
+            consultorio: document.getElementById('m-consultorio').value
+        };
+        if (!body.nombre || !body.especialidad) { toast('Nombre y especialidad son obligatorios.', 'error'); return; }
+        const res = await fetch(API + '/medicos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) { cerrarModal('modal-medico'); cargarMedicos(); cargarContadores(); toast('Médico registrado.'); }
+        else toast('Error al guardar el médico.', 'error');
+    }
+
+    async function guardarCita() {
+        const body = {
+            fecha: document.getElementById('c-fecha').value,
+            hora: document.getElementById('c-hora').value + ':00',
+            estado: 'PENDIENTE',
+            paciente: { id: parseInt(document.getElementById('c-paciente').value) },
+            medico: { id: parseInt(document.getElementById('c-medico').value) }
+        };
+        if (!body.fecha || !body.hora) { toast('Fecha y hora son obligatorias.', 'error'); return; }
+        const res = await fetch(API + '/citas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) { cerrarModal('modal-cita'); cargarCitas(); cargarContadores(); toast('Cita agendada.'); }
+        else toast('Error al agendar la cita.', 'error');
+    }
+
+    async function cancelarCita(id) {
+        const res = await fetch(API + '/citas/' + id + '/cancelar', { method: 'PATCH' });
+        if (res.ok) { cargarCitas(); toast('Cita cancelada.'); }
+        else toast('Error al cancelar.', 'error');
+    }
+
+    async function eliminarCita(id) {
+        const res = await fetch(API + '/citas/' + id, { method: 'DELETE' });
+        if (res.ok) { cargarCitas(); cargarContadores(); toast('Cita eliminada.'); }
+        else toast('Error al eliminar.', 'error');
+    }
+
+    async function eliminarPaciente(id) {
+        const res = await fetch(API + '/pacientes/' + id, { method: 'DELETE' });
+        if (res.ok) { cargarPacientes(); cargarContadores(); toast('Paciente eliminado.'); }
+        else toast('Error al eliminar.', 'error');
+    }
+
+    async function eliminarMedico(id) {
+        const res = await fetch(API + '/medicos/' + id, { method: 'DELETE' });
+        if (res.ok) { cargarMedicos(); cargarContadores(); toast('Médico eliminado.'); }
+        else toast('Error al eliminar.', 'error');
+    }
+
+    cargarContadores();
+</script>
+</body>
+</html>
